@@ -150,6 +150,12 @@ callbackTranslator =
 localsync = (method, model, options) ->
   store = new Store options.storeName
 
+  toJSON = (model) ->
+    if _.isUndefined(model) || _.isUndefined(model.toJSON)
+      model
+    else
+      model.toJSON()
+
   response = switch method
     when 'read'
       if model.id then store.find(model) else store.findAll()
@@ -161,9 +167,11 @@ localsync = (method, model, options) ->
       unless options.add and not options.merge and store.find(model)
         model = store.create(model)
         store.dirty(model) if options.dirty
+        toJSON(model)
     when 'update'
       store.update(model)
       if options.dirty then store.dirty(model) else store.clean(model, 'dirty')
+      toJSON(model)
     when 'delete'
       store.destroy(model)
       if options.dirty
@@ -173,6 +181,7 @@ localsync = (method, model, options) ->
           store.clean(model, 'dirty')
         else
           store.clean(model, 'destroyed')
+      toJSON(model)
   
   unless options.ignoreCallbacks
     if response
